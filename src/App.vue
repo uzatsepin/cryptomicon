@@ -188,22 +188,40 @@ export default {
       graph: [],
     };
   },
+
+  created() {
+    const tickersData = localStorage.getItem("cryptonomicon-list");
+
+    if (tickersData) {
+      this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach((ticker) => {
+        this.subscribeToUpdates(ticker.name);
+      });
+    }
+  },
+
   methods: {
-    add() {
-      const currentTicker = { name: this.ticker, price: "-" };
-      this.tickers.push(currentTicker);
+    subscribeToUpdates(tickerName) {
       setInterval(async () => {
         const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=7c4432d26686fc85dd92f139e2a8b07ad8b181cf5c9cd07c9a6567f96f059f59`,
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=7c4432d26686fc85dd92f139e2a8b07ad8b181cf5c9cd07c9a6567f96f059f59`
         );
         const data = await f.json();
-        this.tickers.find((t) => t.name === currentTicker.name).price =
+        this.tickers.find((t) => t.name === tickerName).price =
           data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-        if (this.sel?.name === currentTicker.name) {
+        if (this.sel?.name === tickerName) {
           this.graph.push(data.USD);
         }
       }, 5000);
       this.ticker = "";
+    },
+
+    add() {
+      const currentTicker = { name: this.ticker, price: "-" };
+      this.tickers.push(currentTicker);
+
+      localStorage.setItem("cryptonomicon-list", JSON.stringify(this.tickers));
+      this.subscribeToUpdates(currentTicker.name);
     },
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter((t) => t != tickerToRemove);
@@ -212,7 +230,7 @@ export default {
       const maxValue = Math.max(...this.graph);
       const minValue = Math.min(...this.graph);
       return this.graph.map(
-        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue),
+        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
       );
     },
     select(ticker) {
