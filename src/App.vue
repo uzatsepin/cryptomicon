@@ -67,12 +67,15 @@
                   CHD
                 </span>
               </div>
-              <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+              <div v-if="isOld">
+                <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+              </div>
             </div>
           </div>
           <button
             @click="add"
             type="button"
+            :disabled="disabled"
             class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             <!-- Heroicon name: solid/mail -->
@@ -242,6 +245,10 @@ export default {
   },
 
   computed: {
+    isOld() {
+      return this.tickers?.filter((t) => t.name === this.ticker?.toUpperCase())
+        .length;
+    },
     startIndex() {
       return (this.page - 1) * 6;
     },
@@ -294,6 +301,9 @@ export default {
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
     },
     add() {
+      if (this.isOld) {
+        return;
+      }
       const currentTicker = { name: this.ticker, price: "-" };
       this.tickers = [...this.tickers, currentTicker];
       this.filter = "";
@@ -314,6 +324,13 @@ export default {
     },
   },
   watch: {
+    ticker() {
+      if (!this.ticker || this.isOld) {
+        this.disabled = true;
+        return;
+      }
+      this.disabled = false;
+    },
     tickers() {
       localStorage.setItem("cryptonomicon-list", JSON.stringify(this.tickers));
     },
